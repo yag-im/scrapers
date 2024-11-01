@@ -1,31 +1,31 @@
 repos:
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.26.3
+    rev: 0.29.4
     hooks:
       - id: check-github-workflows
   - repo: https://github.com/python-poetry/poetry
-    rev: 1.6.0
+    rev: 1.8.0
     hooks:
       - id: poetry-check
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         args: [ scrapers, tests ]
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 24.10.0
     hooks:
       - id: black
         args: [ scrapers, tests ]
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.1.1
     hooks:
       - id: flake8
         name: flake8
@@ -36,7 +36,7 @@ repos:
       - id: gitlint
         args: [ --config=lint/.gitlint, --msg-filename ]
   - repo: https://github.com/pycqa/pylint
-    rev: v3.0.0a7
+    rev: v3.3.1
     hooks:
       - id: pylint
         args:
@@ -48,7 +48,7 @@ repos:
           - pylint2junit
         files: foo/
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
+    rev: v1.13.0
     hooks:
       - id: mypy
         files: foo  # TODO: replace with: exclude: tests/

@@ -1,10 +1,12 @@
 import json
+import os
 import time
 import typing as t
 from pathlib import Path
 
-from scrapers.mg.secrets import API_KEY
 from scrapers.misc import get_url
+
+API_KEY = os.environ.get("MOBYGAMES_API_KEY")
 
 MIN_SLEEP = 10
 JSON_INDENT = 4

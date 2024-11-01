@@ -3,4 +3,5 @@
 .vscode/
 data/
 __pycache__/
-secrets.py
+
+secrets.env

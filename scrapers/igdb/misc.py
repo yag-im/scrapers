@@ -1,12 +1,11 @@
+import os
 import time
 import typing as t
 
-from scrapers.igdb.secrets import (
-    CLIENT_ID,
-    CLIENT_SECRET,
-)
 from scrapers.misc import post_url
 
+CLIENT_ID = os.environ.get("IGDB_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("IGDB_CLIENT_SECRET")
 MIN_SLEEP = 0.25
 
 

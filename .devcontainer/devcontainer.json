@@ -3,6 +3,10 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
+	"runArgs": [
+        "--name=yag-scrapers",
+        "--env-file=${localWorkspaceFolder}/.devcontainer/secrets.env"
+    ],
 	"customizations": {
 		"vscode": {
 			"extensions": [
