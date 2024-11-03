@@ -1,7 +1,6 @@
 .tox/
 .venv/
 .vscode/
-data/
 __pycache__/
 
 secrets.env

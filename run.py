@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # from scrapers.ag.games import run as ag_parse_index
@@ -9,9 +10,11 @@ from scrapers.igdb.index import run as igdb_scrape_index
 # from scrapers.qz.games import run as qz_parse_index
 # from scrapers.qz.index import run as qz_scrape_index
 
-# qz_scrape_index(Path("data/qz"))
-# ag_scrape_index(Path("data/ag"))
-# mg_scrape_index(Path("data/mg"))
-igdb_scrape_index(Path("data/igdb"))
+DATA_DIR = Path(os.environ.get("DATA_DIR"))
+
 # res = get_game_by_id(149734)
-a = 1
+
+# qz_scrape_index(DATA_DIR / "qz")
+# ag_scrape_index(DATA_DIR / "ag")
+# mg_scrape_index(DATA_DIR / "mg")
+igdb_scrape_index(DATA_DIR / "igdb")

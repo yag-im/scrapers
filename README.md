@@ -1,6 +1,6 @@
 # scrapers
 
-This project includes scripts for parsing websites of popular adventure games:
+This project contains scripts for parsing popular games websites. Currently supports:
 
     Adventure Gamers: https://adventuregamers.com/
     IGDB: https://www.igdb.com/
@@ -8,17 +8,28 @@ This project includes scripts for parsing websites of popular adventure games:
     MobyGames: https://www.mobygames.com/
     QuestZone: https://questzone.ru/
 
-The resulting output files, stored in the data folder, can be used for internal database (currently, only IGDB output is
-in use).
+The resulting output files can be used for internal SQL DB (only IGDB output is in use currently).
 
-## Run
+## Development
 
-Before opening project in `devcontainer`, create:
+### Prerequisite
 
-    .devcontainer/secrets.env
+Create folder for output data:
 
-file containing:
+    mkdir -p ~/yag/data/scrapers
+
+The generated data is used to initialize the [SQL Database](https://github.com/yag-im/sqldb).
+
+Create `.devcontainer/secrets.env` file:
 
     IGDB_CLIENT_ID=***VALUE***
     IGDB_CLIENT_SECRET=***VALUE***
     MOBYGAMES_API_KEY=***VALUE***
+
+- retrieve secret values from the relevant websites.
+
+Then simply open this project in any IDE that supports devcontainers (VSCode is recommended).
+
+### Run scrapers
+
+    python run.py

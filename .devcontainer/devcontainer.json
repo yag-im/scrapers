@@ -5,6 +5,7 @@
 	},
 	"runArgs": [
         "--name=yag-scrapers",
+		"--env-file=${localWorkspaceFolder}/.devcontainer/.env",
         "--env-file=${localWorkspaceFolder}/.devcontainer/secrets.env"
     ],
 	"customizations": {
@@ -16,6 +17,7 @@
 	},
 	"postCreateCommand": ".devcontainer/post-create.sh",
 	"mounts": [
-		"source=${env:HOME}${env:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind"
+		"source=${env:HOME}${env:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind",
+		"source=${env:HOME}${env:USERPROFILE}/yag/data/scrapers,target=/mnt/data,type=bind"
 	]
 }
