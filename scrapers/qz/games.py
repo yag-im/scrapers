@@ -9,14 +9,8 @@ import dateparser
 import requests
 from bs4 import BeautifulSoup
 
-CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-DATA_DIR = f"{CUR_DIR}/../../data/qz"
-HTML_DIR = f"{DATA_DIR}/html"
-SCREENSHOTS_DIR = f"{DATA_DIR}/screenshots"
-COVERS_DIR = f"{DATA_DIR}/covers"
-RES_FILE = f"{DATA_DIR}/descr.csv"
-
-DOMAIN = "http://questzone.ru"
+from scrapers.misc import get_url
+from scrapers.qz.conf import DOMAIN
 
 COLUMNS = [
     "id",
@@ -43,35 +37,37 @@ COLUMNS = [
     "project_status",
     "store_link",
 ]
+ENCODING = "UTF-16"
 
 
-def download_file(url, dir):
+def download_file(url: str, output_dir: Path) -> None:
     filename = url.rsplit("/", 1)[1]
-    filepath = os.path.join(dir, filename)
-    if os.path.exists(filepath):
+    filepath = output_dir / filename
+    if filepath.exists():
         return
     try:
-        r = requests.get(url)
-    except Exception as e:
+        r = get_url(url)
+    except requests.exceptions.RequestException as e:
         print(url)
         print(e)
         return
     if r.status_code != 200:
         print(f"error getting file: {url}")
         return
-    open(filepath, "wb").write(r.content)
+    with open(filepath, "wb", encoding=ENCODING) as f:
+        f.write(r.content)
     sleep(0.5)
 
 
-def download_screenshots(url):
-    dirpath = os.path.join(SCREENSHOTS_DIR, url.rsplit("/", 1)[1])
+def download_screenshots(url: str, data_path: Path) -> None:
+    dirpath = data_path / "screenshots" / url.rsplit("/", 1)[1]
     if not os.path.exists(dirpath):
         os.makedirs(dirpath)
     else:
         return
     try:
-        r = requests.get(url)
-    except Exception as e:
+        r = get_url(url)
+    except requests.exceptions.RequestException as e:
         print(url)
         print(e)
         return
@@ -87,15 +83,15 @@ def download_screenshots(url):
             download_file(f"{DOMAIN}{url_path}", dirpath)
 
 
-def parse_file(filepath):
-    with open(filepath, "rb") as f:
+def parse_html_file(html_file_path: Path, data_path: Path, scrape_covers: bool, scrape_screenshots: bool) -> dict:
+    with open(html_file_path, "rb") as f:
         soup = BeautifulSoup(f.read().decode("cp1251"), "html5lib")
 
     tbl = soup.find("table", {"class": "txt"})
 
     descr = dict.fromkeys(COLUMNS, None)
 
-    descr["id"] = int(Path(filepath).stem)
+    descr["id"] = int(html_file_path.stem)
     descr["name"] = tbl.find("div", {"class": "hdr0"}).text
 
     rus_name = tbl.find("font")
@@ -106,11 +102,12 @@ def parse_file(filepath):
     if other_names:
         descr["other_names"] = [x.strip().replace('"', "") for x in other_names.find("i").text.split("\n")]
 
-    cover = tbl.find("img", {"alt": "Обложка"})
-    if cover:
-        # descr['cover'] = cover['src']
-        # download_file(f"{DOMAIN}{cover['src']}", COVERS_DIR)
-        pass
+    if scrape_covers:
+        cover = tbl.find("img", {"alt": "Обложка"})
+        if cover:
+            descr["cover"] = cover["src"]
+            download_file(f"{DOMAIN}{cover['src']}", data_path / "covers")
+            pass
 
     for tr in tbl.find_all("tr"):
         tds = tr.find_all("td")
@@ -118,12 +115,12 @@ def parse_file(filepath):
             if tds[0].find("div", {"align": "justify"}):
                 descr["description"] = tds[0].text
             else:
-                links = tds[0].find_all("a")
-                if links:
-                    link = links[-1]["href"][:-1]
-                    if "questzone.ru/screenshots" in link:
-                        pass
-                        # download_screenshots(link)
+                if scrape_screenshots:
+                    links = tds[0].find_all("a")
+                    if links:
+                        link = links[-1]["href"][:-1]
+                        if "questzone.ru/screenshots" in link:
+                            download_screenshots(link, data_path)
         elif len(tds) >= 2:
             field = tds[0].text
             value = tds[1].text
@@ -194,14 +191,16 @@ def parse_file(filepath):
                     and ": " != field
                     and ":" != field
                 ):
-                    print(filepath)
+                    print(html_file_path)
                     print(field)
 
     return descr
 
 
-def run(data_path: Path):
-    files = os.listdir(HTML_DIR)
+def run(data_path: Path, scrape_covers: bool = False, scrape_screenshots: bool = False) -> None:
+    html_dir = data_path / "html"
+    res_file = data_path / "descr.csv"
+    files = os.listdir(html_dir)
     i = 1
     result = {}
 
@@ -212,18 +211,17 @@ def run(data_path: Path):
         if not filename.endswith(".html"):
             continue
         # print(filename)
-        descr = parse_file(os.path.join(HTML_DIR, filename))
+        descr = parse_html_file(html_dir / filename, data_path, scrape_covers, scrape_screenshots)
         if descr["id"] in result:
             print(f"duplicate entry found. id: {descr['id']}")
         else:
             result[descr["id"]] = descr
         i += 1
-
     try:
-        with open(RES_FILE, "w") as csvfile:
+        with open(res_file, "w", encoding=ENCODING) as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=COLUMNS)
             writer.writeheader()
-            for id, descr in result.items():
+            for _, descr in result.items():
                 writer.writerow(descr)
     except IOError:
         print("I/O error")

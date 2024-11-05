@@ -3,9 +3,9 @@ build-backend = "poetry_dynamic_versioning.backend"
 requires = ["poetry-core", "poetry-dynamic-versioning"]
 
 [tool.poetry]
-authors = ["yag"]
+authors = ["yag-im"]
 description = "yag scrapers"
-keywords = ["yag", "scrapers"]
+keywords = ["scrapers"]
 name = "scrapers"
 readme = "README.md"
 version = "0.0.0"
@@ -35,7 +35,7 @@ style = "semver"
 run = "wsgi:app"
 
 [tool.bandit.assert_used]
-skips = ["data", "*_test.py", "*/test_*.py"]
+exclude = ["*_test.py", "test_*.py"]
 
 [tool.black]
 line-length = 120
@@ -47,7 +47,6 @@ exclude = '''
   | venv
   | build
   | dist
-  | data
 )
 '''
 
@@ -59,7 +58,7 @@ line_length = 120
 profile = "black"
 multi_line_output = 3
 skip = "target"
-skip_glob = "**/gen/*,.venv*/*,venv*/*,.tox/*,data/*"
+skip_glob = "**/gen/*,.venv*/*,venv*/*,.tox/*"
 known_first_party = "scrapers"
 known_third_party = "pytest"
 
@@ -70,11 +69,11 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-s -v"
-testpaths = "tests"
 markers = [
     "integration: marks integration tests",
     "unit: marks unittests"
 ]
+testpaths = "tests"
 
 [tool.tox]
 legacy_tox_ini = """
@@ -84,9 +83,9 @@ skipsdist = True
 skip_missing_interpreters = True
 
 [testenv:lint]
-skip_install = true
+skip_install = false
 recreate = false
-ignore_errors = true
+ignore_errors = false
 deps =
     pre-commit
 commands =
@@ -101,5 +100,5 @@ deps =
 commands_pre =
     poetry install --with test
 commands =
-    poetry run pytest tests
+    poetry run pytest tests/
 """

@@ -1,11 +1,26 @@
-import csv
-import re
+#  type: ignore
 
-QZ_DESCR_DB_PATH = "../data/qz/descr.csv"
-AG_DESCR_DB_PATH = "../data/ag/descr.csv"
-MISSING_PATH = "../data/qz_missing.csv"
-MATCHING_PATH = "../data/qz_matching.csv"
+import csv
+import datetime
+import os
+import re
+from pathlib import Path
+from typing import (
+    Any,
+    Optional,
+)
+
+ENV_VAR_DATA_DIR = os.environ.get("DATA_DIR")
+if ENV_VAR_DATA_DIR is None:
+    raise ValueError("DATA_DIR env var is not set")
+DATA_DIR = Path(ENV_VAR_DATA_DIR)
+
+QZ_DESCR_DB_PATH = DATA_DIR / "qz" / "descr.csv"
+AG_DESCR_DB_PATH = DATA_DIR / "ag" / "descr.csv"
+MISSING_PATH = DATA_DIR / "qz" / "missing.csv"
+MATCHING_PATH = DATA_DIR / "qz" / "matching.csv"
 TARGET_SIMILARITY = 0.55
+ENCODING = "UTF-16"
 
 COLUMNS_AG = [
     "id",
@@ -26,7 +41,7 @@ COLUMNS_AG = [
 ]
 
 
-def find_ngrams(text: str, number: int = 3) -> set:
+def find_ngrams(text: str, number: int = 3) -> set[str]:
     """
     returns a set of ngrams for the given string
     :param text: the string to find ngrams for
@@ -48,7 +63,7 @@ def find_ngrams(text: str, number: int = 3) -> set:
     return ngrams
 
 
-def similarity(text1: str, text2: str, number: int = 3) -> float:
+def find_similarity(text1: str, text2: str, number: int = 3) -> float:
     """
     Finds the similarity between 2 strings using ngrams.
     0 being completely different strings, and 1 being equal strings
@@ -66,22 +81,22 @@ def similarity(text1: str, text2: str, number: int = 3) -> float:
     return (float(num_equal) / float(num_unique)) if num_unique else 0
 
 
-def ts_similarity(ts1, ts2, days_diff):
+def ts_similarity(ts1: datetime.datetime, ts2: datetime.datetime, days_diff: int) -> bool:
     return abs((ts1 - ts2).days) < days_diff
 
 
-def find_similar_games(descr, db):
+def find_similar_games(descr: dict, db: dict) -> Optional[tuple[float, Any]]:
     res = []
-    for k, v in db.items():
-        sim = similarity(descr["name"], v["name"])
+    for _, val in db.items():
+        sim = find_similarity(descr["name"], val["name"])
         if sim >= TARGET_SIMILARITY:
-            res.append((sim, v))
+            res.append((sim, val))
             # do not break here, there might be better matches further in db
-        elif v["other_names"]:
-            for othn in v["other_names"].split(","):
-                sim = similarity(descr["name"], othn)
+        elif val["other_names"]:
+            for othn in val["other_names"].split(","):
+                sim = find_similarity(descr["name"], othn)
                 if sim >= TARGET_SIMILARITY:
-                    res.append((sim, v))
+                    res.append((sim, val))
                     break
     if not res:  # no similarities found
         return None
@@ -91,28 +106,28 @@ def find_similar_games(descr, db):
     return res[0]
 
 
-with open(QZ_DESCR_DB_PATH, mode="r") as f:
+with open(QZ_DESCR_DB_PATH, mode="r", encoding=ENCODING) as f:
     csv_reader = csv.DictReader(f)
     qz_db = {row["id"]: row for row in csv_reader}
 
-with open(AG_DESCR_DB_PATH, mode="r") as f:
+with open(AG_DESCR_DB_PATH, mode="r", encoding=ENCODING) as f:
     csv_reader = csv.DictReader(f)
     ag_db = {row["id"]: row for row in csv_reader}
 
 misses = []
 matches = []
-manual = []
+manual: list[str] = []
 i = 0
 
 # trying to find games present in AG, but absent in QZ
 for _, v in ag_db.items():
     print(f'{i} processing: {v["name"]}')
-    sim = find_similar_games(v, qz_db)
-    if sim is None:
+    similar_games = find_similar_games(v, qz_db)
+    if similar_games is None:
         misses.append(v)
         print("\t\tmissing")
     else:
-        matches.append((v, sim))
+        matches.append((v, similar_games))
         print("\t\tmatching")
     i += 1
 
@@ -121,14 +136,14 @@ print(f"matches: {len(matches)}")
 print(f"manual: {len(manual)}")
 
 
-with open(MISSING_PATH, "w") as csvfile:
+with open(MISSING_PATH, "w", encoding=ENCODING) as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=COLUMNS_AG)
     writer.writeheader()
     for el in misses:
         writer.writerow(el)
 
 
-with open(MATCHING_PATH, "w") as csvfile:
+with open(MATCHING_PATH, "w", encoding=ENCODING) as csvfile:
     writer = csv.DictWriter(
         csvfile,
         fieldnames=[

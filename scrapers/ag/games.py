@@ -7,12 +7,7 @@ from time import sleep
 import requests
 from bs4 import BeautifulSoup
 
-CUR_DIR = os.path.dirname(os.path.realpath(__file__))
-DATA_DIR = f"{CUR_DIR}/../../data/ag"
-HTML_DIR = f"{DATA_DIR}/html"
-SCREENSHOTS_DIR = f"{DATA_DIR}/screenshots"
-COVERS_DIR = f"{DATA_DIR}/covers"
-RES_FILE = f"{DATA_DIR}/descr.csv"
+from scrapers.misc import get_url
 
 COLUMNS = [
     "id",
@@ -30,154 +25,154 @@ COLUMNS = [
     "bestRating",
     "worstRating",
     "genre",
+    "platform",
+    "perspective",
+    "control",
+    "gameplay",
+    "theme",
+    "graphic_style",
+    "presentation",
+    "action_compulsory",
+    "red_flags",
+    "media",
 ]
+ENCODING = "UTF-16"
 
 
-def download_file(url, filepath):
-    if os.path.exists(filepath):
+def download_file(url: str, filepath: Path) -> None:
+    if filepath.exists():
         return
     try:
-        r = requests.get(url)
-    except Exception as e:
+        r = get_url(url)
+    except requests.exceptions.RequestException as e:
         print(e)
         return
     if r.status_code != 200:
         print(f"error getting file: {url}")
         return
-    open(filepath, "wb").write(r.content)
+    with open(filepath, "wb") as f:
+        f.write(r.content)
     sleep(0.5)
 
 
-def download_cover(url, dir):
+def download_cover(url: str, dest_dir: Path) -> None:
     filename = f"{url.rsplit('/', 2)[1]}.jpg"
-    filepath = os.path.join(dir, filename)
+    filepath = dest_dir / filename[0] / filename
+    filepath.parent.mkdir(parents=True, exist_ok=True)
     download_file(url, filepath)
 
 
-def parse_file(filepath):
-    with open(filepath, "rb") as f:
+def parse_html_file(html_file_path: Path, data_path: Path, scrape_covers: bool) -> dict:
+    with open(html_file_path, "rb") as f:
         soup = BeautifulSoup(f, "html.parser")
 
     descr = dict.fromkeys(COLUMNS, None)
 
-    descr["id"] = int(os.path.basename(filepath)[:-5])
+    descr["id"] = int(os.path.basename(html_file_path)[:-5])
 
     game_info = None
     data_scripts = soup.find_all("script", {"type": "application/ld+json"})
     for ds in data_scripts:
         ds_str = str(ds.string)
         if "VideoGame" in ds_str:
-            game_info = json.loads(ds_str)
+            try:
+                game_info = json.loads(ds_str)
+            except json.decoder.JSONDecodeError:
+                print(f"error decoding json for: {html_file_path}")
+                continue
             break
     if not game_info:
-        print(f"game info not found. id: {descr['id']}")
-        return descr
+        print(f"game info not found: id={descr['id']}")
+    else:
+        for k, v in game_info.items():
+            if k[0] == "@" or k == "url":
+                continue
+            if k not in descr and k not in ["aggregateRating"]:
+                raise ValueError(f"new field: {k}")
+            if k in ["author", "publisher"]:
+                # few authors/publishers have brackets in their name, this conflicts with final CSV formatting
+                descr[k] = [x.replace("[", "<").replace("]", ">") for x in v["name"]]
+            elif k == "aggregateRating":
+                for k_, v_ in v.items():
+                    if k_[0] == "@" or k_ == "itemReviewed":
+                        continue
+                    if k_ not in descr:
+                        raise ValueError(f"new field: {k_}")
+                    descr[k_] = v_
+            elif k == "datePublished" and v == "0":
+                descr[k] = None
+            else:
+                descr[k] = v
 
-    for k, v in game_info.items():
-        if k[0] == "@" or k == "url":
-            continue
-        if k not in descr and k not in ["aggregateRating"]:
-            raise Exception(f"new field: {k}")
-        if k in ["author", "publisher"]:
-            # few authors/publishers have brackets in their name, this conflicts with final CSV formatting
-            descr[k] = [x.replace("[", "<").replace("]", ">") for x in v["name"]]
-        elif k == "aggregateRating":
-            for k_, v_ in v.items():
-                if k_[0] == "@" or k_ == "itemReviewed":
-                    continue
-                if k_ not in descr:
-                    raise Exception(f"new field: {k_}")
-                descr[k_] = v_
-        elif k == "datePublished" and v == "0":
-            descr[k] = None
-        else:
-            descr[k] = v
+    descr["name"] = soup.find("h1", {"class": "page_title"}).text
 
-    return descr
+    game_desc_div = soup.find("div", {"id": "game_desc"})
+    if game_desc_div:
+        descr["description"] = game_desc_div.find("p").text
 
-    """
-    descr['name'] = soup.find("h1", {"class": "page_title"}).text
-
-    cover_url = soup.find('div', {"class": "feat_image"})
-    if cover_url:
-        download_cover(cover_url.find('img')['data-src'], COVERS_DIR)
-
-    description = soup.find('div', {"id": "game_desc"})
-    if description:
-        descr['description'] = description.text
-
-    div = soup.find("div", {"class": "rblock_1"})
-    developer = descr['developer'] = div.find('p', {"itemprop": "author"}).find('span')
-    if developer:
-        descr['developer'] = developer.text
-    date_published = div.find('span', {"itemprop": "datePublished"})
-    if date_published:
-        parts = date_published.text.split('by')
-        try:
-            descr['date_published'] = dateutil.parser.parse(parts[0], fuzzy=True)
-        except Exception as e:
-            pass
+    if scrape_covers:
+        cover_img = soup.find("img", {"id": "gamebox_new"})
+        if cover_img:
+            download_cover(cover_img["data-src"], data_path / "covers")
 
     div = soup.find("div", {"class": "our_verdict"})
     if div:
-        div_ = div.find('div', {"itemprop": "reviewRating"})
+        div_ = div.find("div", {"itemprop": "reviewRating"})
         if div_:
-            descr['ag_rating'] = float(div_.find('strong').text.split(' ')[0])
-            div_ = div.find('div', {"class": "buy_product_new"})
+            descr["ag_rating"] = float(div_.find("strong").text.split(" ")[0])
+            div_ = div.find("div", {"class": "buy_product_new"})
             if div_:
-                descr['store'] = [a['href'] for a in div_.find_all('a')]
-        div = div.find('div', {"itemprop": "aggregateRating"})
+                descr["store"] = [a["href"] for a in div_.find_all("a")]
+        div = div.find("div", {"itemprop": "aggregateRating"})
         if div:
-            descr['user_rating'] = float(div.find('span', {"itemprop": "ratingValue"}).text)
-            descr['user_rating_count'] = float(div.find('span', {"itemprop": "reviewCount"}).text)
+            descr["user_rating"] = float(div.find("span", {"itemprop": "ratingValue"}).text)
+            descr["user_rating_count"] = float(div.find("span", {"itemprop": "reviewCount"}).text)
 
     div = soup.find("div", {"id": "comment-container"})
 
     div_ = div.find_all("div", {"class": "padding"})
     if div_ and len(div_) >= 2:
-        descr['sys_requirements'] = div_[1].text
+        descr["sys_requirements"] = div_[1].text
 
     tbl = div.find("table", {"class": "game_info_table"})
     for tr in tbl.find_all("tr"):
         tds = tr.find_all("td")
-        field = tds[0].text.lower().replace(' ', '_').replace(')', '').replace('(', '')
+        field = tds[0].text.lower().replace(" ", "_").replace(")", "").replace("(", "")
         if field not in COLUMNS:
-            print(f'addme: {field}')
+            print(f"addme: {field}")
             continue
         value = tds[1].text
-        if value == '-':
+        if value == "-":
             continue
-        if ',' in value:
-            value = [x.strip() for x in value.split(',')]
+        if "," in value:
+            value = [x.strip() for x in value.split(",")]
         descr[field] = value
     return descr
-    """
 
 
-def run(data_path: Path):
-    files = os.listdir(HTML_DIR)
+def run(data_path: Path, scrape_covers: bool = False) -> None:
+    res_file = data_path / "descr.csv"
+    htmls_dir = data_path / "html"
+    all_files = htmls_dir.rglob("*")
+    all_html_files_count = len([f for f in htmls_dir.rglob("*") if f.suffix == ".html"])
     i = 1
     result = {}
-
-    for filename in files:
-        if i % 1000 == 1:
-            print(f"processing file {filename}: {i} of {len(files)}")
-        # filename = '16299.html'
-        if not filename.endswith(".html"):
+    for file in all_files:
+        if file.suffix != ".html":
             continue
-        # print(filename)
-        descr = parse_file(os.path.join(HTML_DIR, filename))
+        if i % 1000 == 1:
+            print(f"processing file {file}: {i} of {all_html_files_count}")
+        descr = parse_html_file(file, data_path, scrape_covers)
         if descr["id"] in result:
             print(f"duplicate entry found. id: {descr['id']}")
         else:
             result[descr["id"]] = descr
         i += 1
-
     try:
-        with open(RES_FILE, "w") as csvfile:
+        with open(res_file, "w", encoding=ENCODING) as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=COLUMNS)
             writer.writeheader()
-            for id, descr in result.items():
+            for _, descr in result.items():
                 writer.writerow(descr)
     except IOError:
         print("I/O error")

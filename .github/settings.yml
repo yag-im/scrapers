@@ -1,4 +1,4 @@
 _extends: .github:settings.yml
 repository:
   name: scrapers
-  description: Scrapers for public games databases
+  description: Scrapers for popular games websites

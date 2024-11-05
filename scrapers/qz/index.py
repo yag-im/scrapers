@@ -15,7 +15,7 @@ LANGUAGES = {
 SLEEP_OK = 0.5
 
 
-def run(data_path: Path):
+def run(data_path: Path) -> None:
     data_path.mkdir(parents=True, exist_ok=True)
     for lang, letters in LANGUAGES.items():
         for letter in letters:

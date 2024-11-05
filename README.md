@@ -1,6 +1,8 @@
 # scrapers
 
-This project contains scripts for parsing popular games websites. Currently supports:
+This project contains scripts for parsing popular games websites.
+
+Currently supporting:
 
     Adventure Gamers: https://adventuregamers.com/
     IGDB: https://www.igdb.com/
@@ -18,7 +20,7 @@ Create folder for output data:
 
     mkdir -p ~/yag/data/scrapers
 
-The generated data is used to initialize the [SQL Database](https://github.com/yag-im/sqldb).
+Generated data is used to initialize the [SQL Database](https://github.com/yag-im/sqldb).
 
 Create `.devcontainer/secrets.env` file:
 
@@ -32,4 +34,4 @@ Then simply open this project in any IDE that supports devcontainers (VSCode is 
 
 ### Run scrapers
 
-    python run.py
+    python run.py --target=igdb --index
