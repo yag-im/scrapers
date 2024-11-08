@@ -6,6 +6,7 @@ from pathlib import Path
 
 import requests
 
+from scrapers.const import ENCODING
 from scrapers.misc import get_url
 
 API_KEY = os.environ.get("MOBYGAMES_API_KEY")
@@ -16,7 +17,6 @@ JSON_INDENT = 4
 HOST_URL = "https://api.mobygames.com/v1"
 GENRE_ADVENTURE = 2
 FORMAT_NORMAL = "normal"
-ENCODING = "UTF-16"
 
 
 def _get_url(url: str, params: t.Optional[dict] = None) -> requests.Response:

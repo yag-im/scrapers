@@ -9,6 +9,7 @@ import dateparser
 import requests
 from bs4 import BeautifulSoup
 
+from scrapers.const import ENCODING
 from scrapers.misc import get_url
 from scrapers.qz.conf import DOMAIN
 
@@ -37,7 +38,6 @@ COLUMNS = [
     "project_status",
     "store_link",
 ]
-ENCODING = "UTF-16"
 
 
 def download_file(url: str, output_dir: Path) -> None:

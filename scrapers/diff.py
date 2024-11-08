@@ -10,6 +10,8 @@ from typing import (
     Optional,
 )
 
+from scrapers.const import ENCODING
+
 ENV_VAR_DATA_DIR = os.environ.get("DATA_DIR")
 if ENV_VAR_DATA_DIR is None:
     raise ValueError("DATA_DIR env var is not set")
@@ -20,7 +22,6 @@ AG_DESCR_DB_PATH = DATA_DIR / "ag" / "descr.csv"
 MISSING_PATH = DATA_DIR / "qz" / "missing.csv"
 MATCHING_PATH = DATA_DIR / "qz" / "matching.csv"
 TARGET_SIMILARITY = 0.55
-ENCODING = "UTF-16"
 
 COLUMNS_AG = [
     "id",

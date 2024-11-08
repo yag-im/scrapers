@@ -2,6 +2,7 @@ import csv
 import json
 from pathlib import Path
 
+from scrapers.const import ENCODING
 from scrapers.igdb.misc import get_data
 
 HOST_URL = "https://api.igdb.com/v4"
@@ -11,8 +12,6 @@ JSON_INDENT = 4
 GENRE_ID_POINT_AND_CLICK = 2
 GENRE_PUZZLE = 9
 GENRE_ID_ADVENTURE = 31
-
-ENCODING = "UTF-16"
 
 
 def get_genres() -> list:
@@ -153,7 +152,7 @@ def run(data_path: Path) -> None:
     #     games = json.load(ff)
 
     # postgres' COPY supports only UTF-8 encoding
-    with open(data_path / "games.csv", "w", newline="", encoding="UTF-8") as f:
+    with open(data_path / "games.csv", "w", newline="", encoding=ENCODING) as f:
         writer = csv.DictWriter(f, fieldnames=fields_to_write, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
         writer.writeheader()
         # there are duplicates because of how igdb handles genres parameter

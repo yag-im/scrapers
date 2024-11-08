@@ -7,6 +7,7 @@ from time import sleep
 import requests
 from bs4 import BeautifulSoup
 
+from scrapers.const import ENCODING
 from scrapers.misc import get_url
 
 COLUMNS = [
@@ -36,7 +37,6 @@ COLUMNS = [
     "red_flags",
     "media",
 ]
-ENCODING = "UTF-16"
 
 
 def download_file(url: str, filepath: Path) -> None:
