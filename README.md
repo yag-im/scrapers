@@ -1,6 +1,7 @@
 # scrapers
 
-This project contains scripts for parsing popular games websites.
+This project contains scripts for extracting data from popular gaming websites by parsing HTML files or utilizing
+official APIs (such as IGDB) when available.
 
 Currently supporting:
 
@@ -10,28 +11,32 @@ Currently supporting:
     MobyGames: https://www.mobygames.com/
     QuestZone: https://questzone.ru/
 
-The resulting output files can be used for internal SQL DB (only IGDB output is in use currently).
+The generated data files are used to initialize the [SQL DB](https://github.com/yag-im/sqldb).
+Currently, only the IGDB output is utilized for SQL DB initialization.
 
 ## Development
 
 ### Prerequisite
 
-Create folder for output data:
+Ensure that a data directory is available for storing the generated data:
 
-    mkdir -p ~/yag/data/scrapers
+    ~/yag/data/scrapers
 
-Generated data is used to initialize the [SQL Database](https://github.com/yag-im/sqldb).
+This directory will be mounted within the devcontainer as `/mnt/data`.
 
-Create `.devcontainer/secrets.env` file:
+Create a `.devcontainer/secrets.env` file (obtain the secret values from the respective websites):
 
     IGDB_CLIENT_ID=***VALUE***
     IGDB_CLIENT_SECRET=***VALUE***
     MOBYGAMES_API_KEY=***VALUE***
 
-- retrieve secret values from the relevant websites.
+Next, open this project in any IDE that supports devcontainers (VSCode is recommended).
 
-Then simply open this project in any IDE that supports devcontainers (VSCode is recommended).
+### Run
 
-### Run scrapers
+From devcontainers' terminal window, run:
 
     python run.py --target=igdb --index
+
+This will generate several CSV files in the `/mnt/data/igdb` directory, which can be used to initialize the SQL DB
+during local system setup.
