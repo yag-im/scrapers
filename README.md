@@ -1,7 +1,7 @@
 # scrapers
 
 This project contains scripts for extracting data from popular gaming websites by parsing HTML files or utilizing
-official APIs (such as IGDB) when available.
+official APIs (e.g. [IGDB API](https://api-docs.igdb.com/)).
 
 Currently supporting:
 
@@ -34,9 +34,13 @@ Next, open this project in any IDE that supports devcontainers (VSCode is recomm
 
 ### Run
 
-From devcontainers' terminal window, run:
+Scrape index of a specific website:
 
     python run.py --target=igdb --index
 
 This will generate several CSV files in the `/mnt/data/igdb` directory, which can be used to initialize the SQL DB
 during local system setup.
+
+Get game info:
+
+    python run.py --target=igdb --game=217940

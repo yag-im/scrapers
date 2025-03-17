@@ -52,7 +52,7 @@ def get_regions() -> list:
 
 def get_games() -> list:
     res = []
-    for genre in (GENRE_ID_ADVENTURE, GENRE_ID_POINT_AND_CLICK):
+    for genre in (GENRE_ID_ADVENTURE, GENRE_ID_POINT_AND_CLICK, GENRE_PUZZLE):
         res += get_data(
             f"{HOST_URL}/games",
             data=f"\

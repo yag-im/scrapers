@@ -4,6 +4,7 @@ from pathlib import Path
 
 from scrapers.ag.games import run as ag_scrape_games
 from scrapers.ag.index import run as ag_scrape_index
+from scrapers.igdb.index import get_game_by_id
 from scrapers.igdb.index import run as igdb_scrape_index
 from scrapers.mg.index import run as mg_scrape_index
 from scrapers.qz.games import run as qz_scrape_games
@@ -21,6 +22,7 @@ parser.add_argument(
 parser.add_argument("--index", action="store_true", help="Scrape index.")
 parser.add_argument("--covers", action="store_true", help="Scrape covers.")
 parser.add_argument("--screenshots", action="store_true", help="Scrape screenshots.")
+parser.add_argument("--game", type=str, help="Get game info.")
 
 args = parser.parse_args()
 if args.target == "ag":
@@ -30,6 +32,9 @@ if args.target == "ag":
 elif args.target == "igdb":
     if args.index:
         igdb_scrape_index(DATA_DIR / "igdb")
+    elif args.game:
+        game = get_game_by_id(args.game)
+        print(game)
 elif args.target == "mg":
     if args.index:
         mg_scrape_index(DATA_DIR / "mg")
@@ -37,3 +42,5 @@ elif args.target == "qz":
     if args.index:
         qz_scrape_index(DATA_DIR / "qz")
     qz_scrape_games(DATA_DIR / "qz", scrape_covers=args.covers, scrape_screenshots=args.screenshots)
+else:
+    print("Error: specify a target website")
